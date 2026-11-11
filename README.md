@@ -13,7 +13,7 @@ while you play.
 - **New here and just want to play?** Go to [How to play](#how-to-play).
 - **Hosting from your console?** You'll also need [Router setup](#router-setup-port-forwarding).
 - **Something not working?** See [Troubleshooting](#troubleshooting).
-- **Developer?** See [How it works](#how-it-works) and [Building](#building).
+- **Developer?** See [How it works](#how-it-works).
 
 ## Status (2026-11-11)
 
@@ -49,7 +49,7 @@ This walks through everything from a fresh console to playing a match with Xenia
 - An offline profile or any profile that is not signed in to Live).
 - The console connected to the internet
 
-**From XeniaLink** (the release download, or built yourself. See [Building](#building))
+**From XeniaLink** (the release download, or built yourself)
 - `XeniaLink.xex`: the plugin.
 - `XeniaLink.ini`: its settings file. The defaults already point at the Xenia server.
 
@@ -217,106 +217,56 @@ If nothing in the house needs UPnP, leaving it off is the simplest choice.
 
 ## How it works
 
-Xenia Netplay doesn't emulate Microsoft's secure Xbox Live network. It replaces it
-with something much simpler, and XeniaLink does the same on the console:
+Xenia Netplay lets players play online by replacing Xbox Live with a simple
+community server, Xenia Web Services. XeniaLink brings the same idea to a real console:
+while a game is running, it quietly redirects the game's "Xbox Live" activity to that
+server, so console and Xenia players end up in the same matches.
 
-| Piece of Xbox Live | What Xenia Netplay does | What XeniaLink does on the 360 |
+**What the plugin does while a game is running**
+
+- **Makes the game think you're online.** The game is told your offline profile is signed
+  in to Xbox Live with Gold, so its online menus unlock. Nothing ever connects to Microsoft:
+  XeniaLink blocks the game from looking up Xbox Live's servers.
+- **Sends matchmaking to the Xenia server.** When the game searches for, creates, joins or
+  leaves a match, XeniaLink sends that request to Xenia Web Services instead of Xbox Live.
+  Xenia uses the same server, which is why the console and Xenia see each other's matches.
+- **Lets Xenia players connect.** A normal console only accepts encrypted connections from
+  other Xboxes and ignores everything else. Xenia sends ordinary, unencrypted game traffic,
+  so XeniaLink switches the game's connections to accept it. Players connect straight to the
+  host's internet address, which is why the host needs port forwarding.
+- **Handles First Assault's own login.** The game logs in to its community-run server
+  (Lucas Online). The console's built-in way of doing that needs Xbox Live, so XeniaLink
+  provides it instead.
+
+Only the running game is affected. The dashboard, Aurora and FSD are left alone, and no game
+files are changed.
+
+### Ports
+
+| Port | Type | What it's for |
 |---|---|---|
-| Sign-in state | Reports "signed in to Live" | Hooks `XamUserGetSigninState`, `XamUserGetSigninInfo` (flags 0 → online XUID), `XamUserGetXUID`, `XamUserCheckPrivilege`, membership tier, `XNetLogonGetTitleID` |
-| Online XUID | Generated `0009…` XUID | Stable `0009…` XUID derived from the offline profile's XUID |
-| Your network address (XNADDR) | Your public IP + MAC, from `/whoami` | Hooks `XNetGetTitleXnAddr` → public IP from `/whoami`, port 36000 |
-| Peer addressing | A peer's XNADDR is just their public IP | Hooks `XNetXnAddrToInAddr` / `XNetInAddrToXnAddr` → plain IPs (`/players/find` for MACs) |
-| Encryption (XSP, keys, security gateway) | None; plain TCP/UDP between players | Every game TCP/UDP socket gets `SO_MARKINSECURE`; **VDP sockets are created as plain UDP** (like Xenia); fakes `XNetRegisterKey`, `XNetConnect`, `XNetGetConnectStatus` (see below) |
-| QoS | Host data stored on the server | `XNetQosListen` uploads the host blob (`POST …/qos`); `XNetQosLookup` downloads it per session |
-| Matchmaking (XSession*) | HTTP JSON calls to the server | Hooks `XMsgStartIORequest(Ex)`/`XMsgInProcessCall` for the XGI app (0xFB): create, delete, join, leave, modify, search, search-by-id, start/end, write stats |
-| Session identity key | Fixed key (bytes `00..0F`) for hosted sessions and search results | Same key, so each side accepts the other's sessions |
-| Session properties/contexts | Uploaded for the host's session, plus 9 default props (PUID, gamertag, hostname, zone, country, language, platform, MU, sigma) | Captures `XUserSetContext` (0xB0006) / `XUserSetProperty` (0xB0007), adds the same 9 defaults, uploads them (`POST …/properties`); search results are filled from `GET …/properties` |
-| Stats | Read from the server's leaderboards | `XUserReadStats` (0xB0021) answered locally with well-formed empty rows |
-| Live services (XLiveBase app 0xFC) | Partly implemented | Logon ID, NAT type (open), presence init, empty friends list (+ `XamEnumerate`), storage path, empty title-storage enumeration; the rest pass through (logged) |
-| Notifications | "Live connected", "link up", "sign-in changed" | Same notifications injected via `XamNotifyCreateListener`/`XNotifyGetNext`, re-sent every 12 s until the game connects |
-| XAuth (third-party web login) | Mock token, empty token pointer | `XAuthStartup`/`XAuthGetToken` succeed with an empty token pointer, so the game sends `XBL2.0 x=(null)` like under Xenia |
-| XHttp (game's own web backend) | Implemented in the emulator with curl | Implemented in the plugin over plain sockets; `127.0.0.1`/`localhost` → `xhttp_host` |
-| Server API over HTTPS | curl | Built-in BearSSL TLS 1.2 client with kept-alive connections (see [Built-in HTTPS](#built-in-https)) |
+| 1225 | TCP | Joining the host's lobby |
+| 8677 | TCP | A second lobby connection |
+| 1000 | UDP | Game traffic during the match |
+| 1001 | UDP | Used by Xenia on its own side; not needed when the console hosts |
 
-### Why the sockets need special handling
+Only the host needs these forwarded (see [Router setup](#router-setup-port-forwarding)).
+Players who join don't.
 
-A retail console's network stack only talks to other "trusted" Xboxes over encrypted
-links. Xenia sends plain, unencrypted packets, which a normal console silently drops.
+### Secure connection to the server (HTTPS and BearSSL)
 
-- `XNET_STARTUP_BYPASS_SECURITY` (the documented way to turn that off) is devkit-only.
-  Retail consoles ignore it. XeniaLink still sets it, including on `XNetStartupEx`, which
-  First Assault looks up at runtime with `XexGetProcedureAddress`, but on its own it does nothing.
-- What does work is the undocumented socket option `SO_MARKINSECURE` (`0x5801`). XeniaLink
-  sets it on every TCP/UDP socket the game creates, and on every accepted connection.
-- In-match traffic uses VDP sockets (protocol 254). `SO_MARKINSECURE` fails on those,
-  so XeniaLink creates them as ordinary UDP sockets instead. Xenia does the same, so the
-  game's 2-byte VDP header stays in the payload on both sides.
+The Xenia server only accepts modern secure (HTTPS) connections, and the Xbox 360's own
+HTTPS support is too old for it. So XeniaLink includes its own:
+[BearSSL](https://bearssl.org/), a small open-source security library by Thomas Pornin
+(MIT licence; included as `LICENSE-BearSSL.txt` in the release download). It encrypts the
+connection and checks the server's certificate, so the console knows it's really talking to
+the Xenia server.
 
-Hooks are installed **only in the running game's import table**. The dashboard,
-Aurora/FSD and title `00000000` are never hooked. Games can't look up `*.xboxlive.com`,
-so a spoofed console never reaches Microsoft's servers.
-
-### First Assault's network ports
-
-| Port | Protocol | Used for | Opened by |
-|---|---|---|---|
-| 1225 | TCP | Joining the host / lobby | Host (listens) |
-| 8677 | TCP | Second lobby connection | Host (listens) |
-| 1000 | UDP | In-match game traffic (VDP) | Host binds it; clients send to it |
-| 1001 | UDP | Xenia's own VDP socket on the client side | Xenia client |
-| 36000 | — | Port number advertised in XNADDR/sessions (same as Xenia). Not used for traffic | — |
-
-## Built-in HTTPS
-
-The Xenia server only accepts TLS 1.2+ with modern ciphers (it rejects the older CBC
-suites), and Heroku redirects plain HTTP to HTTPS. The console's own TLS is too old, so
-the plugin carries its own TLS client: [BearSSL](https://bearssl.org/) (`third_party/bearssl`,
-MIT licence), wrapped by `src/tls.cpp`.
-
-- **What uses it:** only the Xenia server API (`api_address`, HTTPS by default). The game's
-  own backend (`74.91.124.65`) is plain HTTP and is unaffected.
-- **Certificates:** checked against 14 embedded root CAs (Amazon, Starfield, Let's Encrypt,
-  DigiCert, USERTrust, Google) from Mozilla's CA bundle, in `src/trust_anchors.h`. If the
-  server ever moves to an authority that isn't listed, connections fail with BearSSL error 62
-  until a plugin update adds it.
-- **Clock:** certificate dates are checked against the console clock. If the clock is
-  before 2025 (unset), the plugin uses 2026-11-11 instead and logs
-  `tls: console clock looks unset`. Setting the console's date avoids that.
-- **Speed:** DNS is cached, and two API connections are kept open (HTTP keep-alive,
-  `TCP_NODELAY`, reused for up to 60 s idle), so two calls at once (e.g. a QoS upload next to a
-  session modify) both reuse a connection; a third waits for one to free up. Kept-alive
-  requests take 55–135 ms (searches ~85 ms); a new connection (resumed TLS session) ~350–450 ms.
-
-  | Session call (median) | One connection per request | Kept-alive (now) |
-  |---|---|---|
-  | Create | 306 ms | **226 ms** |
-  | Modify | 478 ms | **119 ms** |
-  | Leave | 133 ms | **122 ms** |
-
-  With `debug_log = true` each request logs
-  `http: <method> <path> -> <status> in N ms (slot N, kept-alive / new connection)`.
-
-## Building
-
-**Requirements:**
-- Xbox 360 SDK 2.0.21256 and Visual Studio 2010 SP1 (Windows).
-- Python 3 (one build step uses `tools\pe_4k_align.py`).
-
-**Build:** run `build\build.bat` (Release by default, or `build\build.bat Debug`). It:
-
-1. Builds BearSSL (`third_party\bearssl`, via `build\bearssl.vcxproj`) into `bearssl.lib`.
-   Only the first build compiles its ~290 files.
-2. Builds the plugin DLL (`build\XeniaLink.vcxproj`).
-3. Runs `tools\pe_4k_align.py`, which marks the DLL 4 KB-aligned so `imagexex` can place it
-   in system memory.
-4. Runs the Xbox 360 SDK's `imagexex` with `build\xex.xml`: a system DLL loaded at
-   `0x91E00000` with 4 KB pages.
-
-Output: `build\Release\XeniaLink.xex`. Ship it exactly as built: the XEX stays encrypted
-with the dev-kit key, which RGH loads, and modifying the file breaks its header hash.
-
-`third_party/bearssl` is [BearSSL](https://bearssl.org/) at commit `7bea48e5`
-(2026-04-06), `src/` and `inc/` only, under its MIT licence (`third_party/bearssl/LICENSE.txt`).
+- It's only used for the Xenia server. Game traffic between players doesn't go through it.
+- The certificate check uses today's date, which is why the console's clock should be set
+  ([step 3](#3-set-the-consoles-date-and-time)).
+- Connections are kept open between requests, so matchmaking calls are quick (usually
+  0.1–0.2 seconds).
 
 ## Roadmap
 
