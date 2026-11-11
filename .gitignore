@@ -1,0 +1,29 @@
+# Only what's needed to build and run the plugin is tracked.
+/*
+!/.gitignore
+!/README.md
+!/LICENSE
+!/src/
+!/config/
+
+/build/*
+!/build/
+!/build/build.bat
+!/build/XeniaLink.vcxproj
+!/build/bearssl.vcxproj
+!/build/XeniaLink.def
+!/build/xex.xml
+
+# build.bat needs pe_4k_align.py
+/tools/*
+!/tools/
+!/tools/pe_4k_align.py
+
+/third_party/*
+!/third_party/
+/third_party/bearssl/*
+!/third_party/bearssl/
+!/third_party/bearssl/src/
+!/third_party/bearssl/inc/
+!/third_party/bearssl/LICENSE.txt
+!/third_party/bearssl/README.txt

@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!-- XeniaLink is a system plugin, built the same way as JRPC2/Proto:
+     - linked at 0x98000000, then tools/pe_4k_align.py marks the DLL 4 KB-aligned (build.bat)
+     - <sysdll/>  = "exports to title | DLL module" instead of a title DLL
+     - loaded at 0x91E00000 (system memory, 4 KB pages). Below DashLaunch (0x91F00000) and
+       clear of JRPC2 (0x91900000), RPC (0x91C00000), Proto (0x91850000), xbdm (0x91000000). -->
+<xex>
+  <sysdll/>
+  <baseaddr addr="0x91E00000"/>
+  <format>
+    <compressed/>
+  </format>
+  <mediatypes>
+    <!-- 0x18000001, same as JRPC2 -->
+    <harddisk/>
+    <livepackage/>
+    <signedpackage/>
+  </mediatypes>
+</xex>
