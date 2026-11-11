@@ -153,10 +153,10 @@ gets in.
 
 | Rule name (any) | External port | Internal IP | Internal port | Protocol |
 |---|---|---|---|---|
-| XeniaLink TCP 1 | 1225 | the console's IP (e.g. `192.168.0.110`) | 1225 | **TCP** |
-| XeniaLink TCP 2 | 8677 | the console's IP | 8677 | **TCP** |
-| XeniaLink UDP 1 | 1000 | the console's IP | 1000 | **UDP** |
-| XeniaLink UDP 2 | 1001 | the console's IP | 1001 | **UDP** (optional, harmless) |
+| XeniaLink TCP 1 | 1225 | the console's IP (e.g. `192.168.0.110`) | 1225 | TCP |
+| XeniaLink TCP 2 | 8677 | the console's IP | 8677 | TCP |
+| XeniaLink UDP 1 | 1000 | the console's IP | 1000 | UDP |
+| XeniaLink UDP 2 | 1001 | the console's IP | 1001 | UDP (optional, harmless) |
 
 Using ALL / Both as the protocol for all four rules is fine and the simplest option.
 
@@ -212,7 +212,7 @@ If nothing in the house needs UPnP, leaving it off is the simplest choice.
 | Symptom | Cause / fix |
 |---|---|
 | Stuck on "Logging in to Lucas Online" | Usually the community backend is down. Check the log for `xhttp:` errors |
-| **Start Game** never finds anyone | Normal if nobody is hosting, your console will host after a few searches |
+| Start Game never finds anyone | Normal if nobody is hosting, your console will host after a few searches |
 | Xenia finds your session but can't join | See [Router setup](#router-setup-port-forwarding). Potential causes: TCP (not UDP) for 1225/8677; check UPnP; reboot the router; check the console's IP hasn't changed |
 | Xenia joins, the match starts, then Xenia "lost connection to host" | UDP 1000 isn't forwarded to the console |
 
