@@ -94,20 +94,10 @@ Copy both files to your hard drive:
    ```
 4. Save
 
-### 6. Reboot and check it loaded
+### 6. Reboot
 
-Turn the console fully off and on again. A few seconds after the dashboard appears you
-should see two notifications:
-
-1. `XeniaLink: started`
-2. `XeniaLink: loaded (ini)`
-
-| You see | Meaning |
-|---|---|
-| `loaded (ini)` | Everything's fine; your `XeniaLink.ini` was read |
-| `loaded (no ini, defaults)` | The ini wasn't found at `Hdd:\XeniaLink.ini`. The defaults still work (they point at the Xenia server), but check the file name and location |
-| `can't write log (status …)` | The hard drive wasn't ready or isn't writable; reboot once more |
-| Nothing at all | DashLaunch didn't load the plugin: check the `launch.ini` line and the path |
+Turn the console fully off and on again so DashLaunch loads the plugin. There's no message
+at startup; you'll see one when you start the game (step 8).
 
 ### 7. Set up your router (to host)
 
@@ -126,6 +116,14 @@ Full step-by-step instructions are in [Router setup](#router-setup-port-forwardi
 ### 8. Play
 
 Start Star Wars: First Assault and search for a game. If everything was set up right you should be good to go
+
+A few seconds after the game starts you should see a notification:
+
+| You see | Meaning |
+|---|---|
+| `XeniaLink: connected to Xenia server` | Everything's fine |
+| `XeniaLink: can't reach Xenia server` | The console can't reach the server: check its internet connection and `api_address` in `XeniaLink.ini` |
+| Nothing | DashLaunch didn't load the plugin: check the `launch.ini` line and the path |
 
 The game re-hosts about every 30 seconds while waiting, so a Xenia player who starts
 searching will find you within a few searches.

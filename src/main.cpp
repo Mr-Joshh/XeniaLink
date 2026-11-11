@@ -17,17 +17,22 @@ static BOOL g_unloading = FALSE;
 
 // Server handshake for a freshly started title. Runs on its own thread so the
 // game isn't blocked while we talk to the server.
-static DWORD WINAPI HandshakeThread(LPVOID) {
+// param: nonzero for a real game (it has a media ID), which gets an on-screen
+// result; system titles like the boot title don't.
+static DWORD WINAPI HandshakeThread(LPVOID param) {
+  BOOL is_game = param != NULL;
   // Give the title a moment to start XNet itself (our XNetStartup hook adds the
   // bypass-security flag); HttpEnsureNetwork covers titles that never do.
   Sleep(3000);
   if (!ApiInit()) {
     Log("main: server handshake failed. Check api_address and the console's internet connection.");
+    if (is_game) Notify(L"XeniaLink: can't reach Xenia server");
     return 0;
   }
   ApiDeleteMySessions();   // clear stale sessions, like Xenia does on boot
   RegisterSignedInPlayers();
   Log("main: handshake done");
+  if (is_game) Notify(L"XeniaLink: connected to Xenia server");
   return 0;
 }
 
@@ -54,19 +59,13 @@ static DWORD OnTitleLaunched(DWORD title_id) {
   n += InstallCrashHooks(title);
   if (n) {
     Log("main: title %08X (media %08X) - %u imports hooked", title_id, media_id, n);
-    HANDLE t = CreateThread(NULL, 0, HandshakeThread, NULL, 0, NULL);
+    HANDLE t = CreateThread(NULL, 0, HandshakeThread, (LPVOID)(media_id != 0), 0, NULL);
     if (t) CloseHandle(t);
   }
   return n;
 }
 
 static DWORD WINAPI MainThread(LPVOID) {
-  // On-screen markers so startup can be followed even if file access fails.
-  // Popups queued before the dashboard UI is up get dropped, so wait for it.
-  for (int i = 0; i < 60 && XamGetCurrentTitleId() == 0; i++) Sleep(500);
-  Sleep(3000);
-  Notify(L"XeniaLink: started");
-
   // Plugins load early in boot; wait until the hard drive accepts files.
   LONG status = -1;
   for (int i = 0; i < 120 && status < 0; i++) {
@@ -81,11 +80,6 @@ static DWORD WINAPI MainThread(LPVOID) {
   Log("XeniaLink 0.1.0 loaded (%s). API %s://%s:%u%s", have_ini ? "ini" : "defaults",
       g_config.api_tls ? "https" : "http", g_config.api_host, g_config.api_port,
       g_config.api_base_path);
-  if (status >= 0) {
-    Notify(L"XeniaLink: loaded (%s)", have_ini ? L"ini" : L"no ini, defaults");
-  } else {
-    Notify(L"XeniaLink: can't write log (status %08X)", status);
-  }
 
   DWORD last_title = 0;
   DWORD retry_until = 0;  // tick count; nonzero while waiting for imports
