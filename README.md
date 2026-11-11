@@ -96,12 +96,11 @@ Copy both files to your hard drive:
 
 ### 6. Reboot
 
-Turn the console fully off and on again so DashLaunch loads the plugin. There's no message
-at startup; you'll see one when you start the game (step 8).
+Turn the console fully off and on again so DashLaunch loads the plugin.
 
 ### 7. Set up your router (to host)
 
-To **host** a match, Xenia players on the internet have to be able to reach your console. You can skip this step if you do not plan on hosting.
+To host a match, Xenia players on the internet have to be able to reach your console. You can skip this step if you do not plan on hosting.
 That needs four port forwards on your router to the console's IP address:
 
 | Port | Protocol |
@@ -117,13 +116,13 @@ Full step-by-step instructions are in [Router setup](#router-setup-port-forwardi
 
 Start Star Wars: First Assault and search for a game. If everything was set up right you should be good to go
 
-A few seconds after the game starts you should see a notification:
+A few seconds after the game starts you should see a notification: `XeniaLink: connected to Xenia server`
 
 | You see | Meaning |
 |---|---|
 | `XeniaLink: connected to Xenia server` | Everything's fine |
-| `XeniaLink: can't reach Xenia server` | The console can't reach the server: check its internet connection and `api_address` in `XeniaLink.ini` |
-| Nothing | DashLaunch didn't load the plugin: check the `launch.ini` line and the path |
+| `XeniaLink: can't reach Xenia server` | The console can't reach the server. Check its internet connection and `api_address` in `XeniaLink.ini` |
+| Nothing | DashLaunch didn't load the plugin. Check the `launch.ini` line and the path |
 
 The game re-hosts about every 30 seconds while waiting, so a Xenia player who starts
 searching will find you within a few searches.
