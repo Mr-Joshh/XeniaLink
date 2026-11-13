@@ -49,9 +49,6 @@ This walks through everything from a fresh console to playing a match with Xenia
 - `XeniaLink.xex`: the plugin.
 - `XeniaLink.ini`: its settings file. The defaults already point at the Xenia server.
 
-**To host matches** (optional)
-- Access to your router's settings, to forward a few ports to the console.
-
 ### 2. Stay off real Xbox Live
 
 XeniaLink makes games *think* you're on Xbox Live. Your console must never actually reach
@@ -79,20 +76,7 @@ Copy both files to your hard drive:
 
 ### 5. Add the plugin to DashLaunch
 
-1. Open DashLaunch
-2. Under `[Plugins]`, add XeniaLink on a free plugin line, for example
-   `plugin2 = Hdd:\XeniaLink.xex`
-3. Under `[Settings]`, check that these are on:
-
-   ```ini
-   liveblock = true
-   livestrong = true
-   ```
-4. Save
-
 ### 6. Reboot
-
-Turn the console fully off and on again so DashLaunch loads the plugin.
 
 ### 7. Set up your router (only if you want to host)
 
@@ -145,8 +129,8 @@ Using ALL / Both as the protocol for all three rules is fine and the simplest op
    client list. The examples here use `192.168.0.110`.
 2. **Log in to the router.** On a device connected to the home network (Wi-Fi or
    Ethernet), open <http://tplinkwifi.net> or type in your default gateway (e.g. 192.168.0.1) and enter the admin password.
-3. **Give the console a fixed IP (only if it changes).** Many routers keep giving the
-   console the same IP on their own, and then this step isn't needed. If you notice the
+3. **Give the console a fixed IP (only if it changes).** Sometimes routers keep giving the
+   console the same IP on their own, so if that's the case for you then this step isn't needed. If you notice the
    console's IP changing, hosting stops working because the forwards point at the old address. To stop that, go to
    **Advanced → Network → DHCP Server → Address Reservation → Add**, enter the console's
    MAC address (shown in the console's network settings, or the router's client list) and
@@ -187,7 +171,7 @@ If you turn it back on:
 
 | Symptom | Cause / fix |
 |---|---|
-| Stuck on "Logging in to Lucas Online" | Usually the community backend is down. Check the log for `xhttp:` errors |
+| Stuck on "Logging in to Lucas Online" | Usually the community backend is down |
 | Start Game never finds anyone | Normal if nobody is hosting, your console will host after a few searches |
 | Xenia finds your session but can't join | See [Router setup](#router-setup-port-forwarding). Potential causes: TCP (not UDP) for 1225/8677; check UPnP; reboot the router; check the console's IP hasn't changed |
 | Xenia joins, the match starts, then Xenia "lost connection to host" | UDP 1000 isn't forwarded to the console |
@@ -244,7 +228,7 @@ the Xenia server.
 4. ~~Console joins a Xenia host~~ Done
 5. ~~**Standalone.** BearSSL TLS inside the plugin, so no PC is needed.~~ Done
 6. ~~Faster API calls (keep-alive, DNS cache), less memory, `debug_log` setting~~ Done
-7. More games (most use plain XSession matchmaking without XHttp), presence, leaderboards.
+7. More games?
 
 ## Credits
 
