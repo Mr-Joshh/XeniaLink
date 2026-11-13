@@ -15,23 +15,23 @@ while you play.
 - **Something not working?** See [Troubleshooting](#troubleshooting).
 - **Developer?** See [How it works](#how-it-works).
 
-## Status (2026-11-11)
+## Status (2026-11-12)
 
-**Xenia Netplay players have joined matches hosted on the console and played them to the end of the match.**
+**Xenia Netplay players have joined matches hosted on the console and played them to the end of the match.
+The console has also joined a match hosted by a Xenia player and played it to the end.**
 
-Supported game: **Star Wars: First Assault** (the Tech Demo Prototype
-build with the community's patched `Coalesced_INT.bin`).
+Supported game: **Star Wars: First Assault**.
 
 | Feature | State |
 |---|---|
-| Plugin loads on RGH/JTAG (DashLaunch 3.21, with Aurora or the stock dashboard) | Working |
+| Plugin loads on RGH/JTAG | Working |
 | Offline profile appears signed in to Live (+ Gold) | Working |
 | First Assault login (Lucas Online, community backend) | Working |
 | Matchmaking on the Xenia server: search, host, join | Working |
 | Console's sessions visible to Xenia, and Xenia's sessions visible to the console | Working |
 | Xenia player joins a console-hosted match and plays it | Working |
 | Built-in HTTPS, no PC needed | Working |
-| Console joins a Xenia-hosted match | Untested. The Xenia player needs a connection that accepts incoming traffic (I was only able to use a phone hotspot which does not) |
+| Console joins a Xenia-hosted match and plays it | Working |
 
 ---
 
@@ -42,18 +42,14 @@ This walks through everything from a fresh console to playing a match with Xenia
 ### 1. What you need
 
 **On the console side**
-- An RGH or JTAG Xbox 360 with DashLaunch 3.x installed (3.21 is what's tested).
-  Aurora, FSD or the stock dashboard all work.
-- Star Wars: First Assault, the Tech Demo Prototype build, with the community's
-  patched `Coalesced_INT.bin`
-- An offline profile or any profile that is not signed in to Live).
-- The console connected to the internet
+- An RGH or JTAG Xbox 360 with DashLaunch installed
+- The community's patched Star Wars: First Assault Tech Demo Prototype build
 
-**From XeniaLink** (the release download, or built yourself)
+**From XeniaLink**
 - `XeniaLink.xex`: the plugin.
 - `XeniaLink.ini`: its settings file. The defaults already point at the Xenia server.
 
-**To host matches** (strongly recommended. See [Who can host](#who-can-host))
+**To host matches** (optional)
 - Access to your router's settings, to forward a few ports to the console.
 
 ### 2. Stay off real Xbox Live
@@ -98,17 +94,16 @@ Copy both files to your hard drive:
 
 Turn the console fully off and on again so DashLaunch loads the plugin.
 
-### 7. Set up your router (to host)
+### 7. Set up your router (only if you want to host)
 
 To host a match, Xenia players on the internet have to be able to reach your console. You can skip this step if you do not plan on hosting.
-That needs four port forwards on your router to the console's IP address:
+That needs three port forwards on your router to the console's IP address:
 
 | Port | Protocol |
 |---|---|
 | 1225 | TCP |
 | 8677 | TCP |
 | 1000 | UDP |
-| 1001 | UDP (Not needed when the console hosts. May matter when Xenia hosts (untested)) |
 
 Full step-by-step instructions are in [Router setup](#router-setup-port-forwarding).
 
@@ -123,19 +118,6 @@ A few seconds after the game starts you should see a notification: `XeniaLink: c
 | `XeniaLink: connected to Xenia server` | Everything's fine |
 | `XeniaLink: can't reach Xenia server` | The console can't reach the server. Check its internet connection and `api_address` in `XeniaLink.ini` |
 | Nothing | DashLaunch didn't load the plugin. Check the `launch.ini` line and the path |
-
-The game re-hosts about every 30 seconds while waiting, so a Xenia player who starts
-searching will find you within a few searches.
-
-#### Who can host
-
-| Console player | Xenia player | Works? |
-|---|---|---|
-| Hosts (ports forwarded) | Joins | Yes |
-| Joins | Hosts (their ports forwarded, or UPnP on) | Untested |
-| Same home network as the Xenia PC | — | No. Both share one public IP and the router can only forward each port to one device |
-
-The reliable setup today: **the console hosts, and Xenia players join.**
 
 ---
 
@@ -153,9 +135,8 @@ gets in.
 | XeniaLink TCP 1 | 1225 | the console's IP (e.g. `192.168.0.110`) | 1225 | TCP |
 | XeniaLink TCP 2 | 8677 | the console's IP | 8677 | TCP |
 | XeniaLink UDP 1 | 1000 | the console's IP | 1000 | UDP |
-| XeniaLink UDP 2 | 1001 | the console's IP | 1001 | UDP (optional, harmless) |
 
-Using ALL / Both as the protocol for all four rules is fine and the simplest option.
+Using ALL / Both as the protocol for all three rules is fine and the simplest option.
 
 ### Step by step (TP-Link routers)
 
@@ -173,15 +154,15 @@ Using ALL / Both as the protocol for all four rules is fine and the simplest opt
 4. **Add the forwards.** Go to **Advanced → NAT Forwarding → Virtual Servers**. Click *Add* for each row of the table
    above:
    - *Service Type*: any name, e.g. `XeniaLink TCP 1`
-   - *External Port*: `1225` (then 8677, 1000, 1001)
+   - *External Port*: `1225` (then 8677 and 1000)
    - *Internal IP*: `192.168.0.110`
    - *Internal Port*: same as the external port
-   - *Protocol*: `TCP` for 1225/8677, `UDP` for 1000/1001 (or `ALL` for all four)
+   - *Protocol*: `TCP` for 1225/8677, `UDP` for 1000 (or `ALL` for all three)
    - Tick *Enable* and click **Save**.
 5. **Turn off UPnP, or clean it up.** Go to **Advanced → NAT Forwarding → UPnP**. If Xenia
    ever ran on a PC on this network, UPnP may have mapped 1225/8677 to that PC, and those
-   mappings override your forwards. Either turn UPnP off, or delete any entries for
-   1225, 8677, 1000 or 1001 that point at a device other than the console. (Turning it back
+   mappings may override your forwards. Either turn UPnP off, or delete any entries for
+   1225, 8677 or 1000 that point at a device other than the console. (Turning it back
    on later is fine; see [Turning UPnP back on](#turning-upnp-back-on).)
 6. **Reboot the router.** Go to **System Tools → Reboot** (or the reboot icon, top right).
    This applies the rules and clears old UPnP mappings. If there are no previous UPnP mappings then you shouldn't need to reboot.
@@ -197,10 +178,8 @@ If you turn it back on:
 
 1. Turn on **Advanced → NAT Forwarding → UPnP**.
 2. If you ever run Xenia on a PC at home, check the UPnP list afterwards and delete any
-   entries for 1225, 8677, 1000 or 1001 that point at the PC (a router reboot should also
-   clears them). Then host from the console again.
-
-If nothing in the house needs UPnP, leaving it off is the simplest choice.
+   entries for 1225, 8677 or 1000 that point at the PC (a router reboot should also
+   clear them). Then host from the console again.
 
 ---
 
@@ -212,6 +191,7 @@ If nothing in the house needs UPnP, leaving it off is the simplest choice.
 | Start Game never finds anyone | Normal if nobody is hosting, your console will host after a few searches |
 | Xenia finds your session but can't join | See [Router setup](#router-setup-port-forwarding). Potential causes: TCP (not UDP) for 1225/8677; check UPnP; reboot the router; check the console's IP hasn't changed |
 | Xenia joins, the match starts, then Xenia "lost connection to host" | UDP 1000 isn't forwarded to the console |
+| Console and Xenia on the same home network can't connect | Not supported. They share one public IP, and the router can only forward each port to one device. Put one of them on another network, such as a phone hotspot |
 
 ---
 
@@ -241,18 +221,6 @@ server, so console and Xenia players end up in the same matches.
 Only the running game is affected. The dashboard, Aurora and FSD are left alone, and no game
 files are changed.
 
-### Ports
-
-| Port | Type | What it's for |
-|---|---|---|
-| 1225 | TCP | Joining the host's lobby |
-| 8677 | TCP | A second lobby connection |
-| 1000 | UDP | Game traffic during the match |
-| 1001 | UDP | Used by Xenia on its own side; not needed when the console hosts |
-
-Only the host needs these forwarded (see [Router setup](#router-setup-port-forwarding)).
-Players who join don't.
-
 ### Secure connection to the server (HTTPS and BearSSL)
 
 The Xenia server only accepts modern secure (HTTPS) connections, and the Xbox 360's own
@@ -271,13 +239,11 @@ the Xenia server.
 ## Roadmap
 
 1. ~~Handshake~~ Done
-2. ~~Login + matchmaking against the Xenia server~~ Done (First Assault)
-3. ~~Cross-network match: Xenia joins a console host~~ Done (2026-11-11)
-4. **Console joins a Xenia host.** Needs Xenia on a connection that accepts inbound
-   traffic, with the same ports forwarded to the Xenia PC.
-5. ~~**Standalone.** BearSSL TLS inside the plugin, so no PC is needed.~~ Done (2026-11-11)
-6. ~~Faster API calls (keep-alive, DNS cache), less memory, `debug_log` setting~~ Done (2026-11-11).
-   Watch for the dashboard-exit issue.
+2. ~~Login + matchmaking against the Xenia server~~ Done
+3. ~~Cross-network match: Xenia joins a console host~~ Done
+4. ~~Console joins a Xenia host~~ Done
+5. ~~**Standalone.** BearSSL TLS inside the plugin, so no PC is needed.~~ Done
+6. ~~Faster API calls (keep-alive, DNS cache), less memory, `debug_log` setting~~ Done
 7. More games (most use plain XSession matchmaking without XHttp), presence, leaderboards.
 
 ## Credits
